@@ -14,7 +14,7 @@ router.post(
   "/add-admin",
   auth.protect,
   auth.restrictTo("admin"),
-  uploadSingle("photo"),
+  uploadSingle("photo"), 
   resize,
   addAdmin
 );
