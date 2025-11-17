@@ -10,6 +10,7 @@ import ScrollToTop from "./components/student/ScrollToTop";
 import Educator from "./pages/educator/Educator";
 import NotFound from "./pages/student/NotFound";
 import CourseDetails from "./pages/student/CourseDetails";
+import ProtectedRoute from "./components/common/ProtectedRoute";
 
 export default function App() {
   const { pathname } = useLocation();
@@ -29,7 +30,10 @@ export default function App() {
           <Route path="/course-list" element={<CourseListPage />} />
           <Route path="/courses/:id" element={<CourseDetails />} />
 
-          <Route path="/admin/*" element={<Educator />} />
+          <Route element={<ProtectedRoute allowedRoles={["educator"]} />}>
+            <Route path="/admin/*" element={<Educator />} />
+          </Route>
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>

@@ -1,11 +1,13 @@
 const express = require("express");
 const path = require("path");
 const dotenv = require("dotenv");
+dotenv.config();
+
 const connectDB = require("./config/db.config");
 const AppError = require("./utilts/AppError");
 const errorHandler = require("./middlewares/errorHandler");
 const corsHandler = require("./middlewares/corsHandler");
-dotenv.config();
+
 const authRoute = require("./routes/authRoute");
 
 process.on("uncaughtException", (err) => {

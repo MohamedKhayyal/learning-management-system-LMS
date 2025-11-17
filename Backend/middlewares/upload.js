@@ -4,14 +4,13 @@ const multer = require("multer");
 const sharp = require("sharp");
 const catchAsync = require("../utilts/catchAsync");
 
-// Multer config: in-memory storage
 const upload = multer({
   storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
     if (file.mimetype && file.mimetype.startsWith("image")) cb(null, true);
     else cb(new Error("Only images allowed"), false);
   },
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  limits: { fileSize: 5 * 1024 * 1024 },
 });
 
 exports.uploadSingle = (field) => (req, res, next) => {
@@ -34,11 +33,8 @@ exports.resize = catchAsync(async (req, res, next) => {
   if (!req.file && (!req.files || Object.keys(req.files).length === 0))
     return next();
 
-  // function to write image
   const writeImage = async (buffer, folder, filename, width, height) => {
-    const outputDir = path.join(process.cwd(), "public", "img", folder);
-
-    // Create folder if not exists
+    const outputDir = path.join(__dirname, "..", "uploads", folder);
     await fs.promises.mkdir(outputDir, { recursive: true });
 
     const outPath = path.join(outputDir, filename);
@@ -49,10 +45,9 @@ exports.resize = catchAsync(async (req, res, next) => {
 
     await pipeline.jpeg({ quality: 90 }).toFile(outPath);
 
-    return `img/${folder}/${filename}`;
+    return `/img/${folder}/${filename}`;
   };
 
-  // 🔹 Single image
   if (req.file) {
     const field = req.file.fieldname || "file";
     let folder = "uploads";
@@ -83,7 +78,6 @@ exports.resize = catchAsync(async (req, res, next) => {
     );
   }
 
-  // 🔹 Multiple images
   if (req.files && Object.keys(req.files).length > 0) {
     for (const key of Object.keys(req.files)) {
       const fileArr = req.files[key];

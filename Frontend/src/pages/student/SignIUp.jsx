@@ -1,8 +1,69 @@
 import { useState } from "react";
+import { useNavigate, Navigate, Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 export default function SignUp() {
   const [role, setRole] = useState("student");
   const [showPwd, setShowPwd] = useState(false);
+
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [photo, setPhoto] = useState(null); 
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!fullName || !email || !password) {
+      setError("Please fill in all fields.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const formData = new FormData();
+      formData.append("fullName", fullName);
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("role", role);
+
+      if (photo) {
+        formData.append("photo", photo);
+      }
+
+      const res = await fetch("http://127.0.0.1:3001/api/auth/signup", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Something went wrong while signing up.");
+        return;
+      }
+
+      navigate("/login");
+    } catch (err) {
+      console.error(err);
+      setError("Network error, please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <section className="min-h-screen flex">
@@ -27,6 +88,7 @@ export default function SignUp() {
 
           <div className="mb-6 flex gap-4">
             <button
+              type="button"
               onClick={() => setRole("student")}
               className={`flex-1 py-3 rounded-md border text-sm transition ${
                 role === "student"
@@ -38,6 +100,7 @@ export default function SignUp() {
             </button>
 
             <button
+              type="button"
               onClick={() => setRole("educator")}
               className={`flex-1 py-3 rounded-md border text-sm transition ${
                 role === "educator"
@@ -49,7 +112,13 @@ export default function SignUp() {
             </button>
           </div>
 
-          <form className="space-y-5">
+          {error && (
+            <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded">
+              {error}
+            </div>
+          )}
+
+          <form className="space-y-5" onSubmit={handleSubmit}>
             <div>
               <label className="block text-sm mb-1 text-slate-600">
                 Full name
@@ -58,6 +127,8 @@ export default function SignUp() {
                 type="text"
                 className="w-full border border-gray-300 rounded-md px-4 h-11 outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="John Doe"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
               />
             </div>
 
@@ -69,43 +140,70 @@ export default function SignUp() {
                 type="email"
                 className="w-full border border-gray-300 rounded-md px-4 h-11 outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
               />
             </div>
 
-            <div className="relative">
+            <div>
+              <label className="block text-sm mb-1 text-slate-600">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPwd ? "text" : "password"}
+                  className="w-full border border-gray-300 rounded-md px-4 h-11 outline-none focus:ring-2 focus:ring-blue-500 pr-12"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPwd((s) => !s)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-slate-600 px-2 py-1 rounded"
+                >
+                  {showPwd ? "Hide" : "Show"}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm mb-1 text-slate-600">
+                Profile photo
+              </label>
               <input
-                type={showPwd ? "text" : "password"}
-                className="w-full border border-gray-300 rounded-md px-4 h-11 outline-none focus:ring-2 focus:ring-blue-500 pr-12"
-                placeholder="••••••••"
-                required
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  setPhoto(file || null);
+                }}
+                className="w-full text-sm"
               />
-              <button
-                type="button"
-                onClick={() => setShowPwd((s) => !s)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-slate-600 px-2 py-1 rounded"
-              >
-                {showPwd ? "Hide" : "Show"}
-              </button>
             </div>
 
             <input type="hidden" name="role" value={role} />
 
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-medium transition"
+              disabled={loading}
+              className={`w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-md font-medium transition ${
+                loading ? "opacity-70 cursor-not-allowed" : ""
+              }`}
             >
-              Create account
+              {loading ? "Creating account..." : "Create account"}
             </button>
           </form>
 
           <p className="mt-6 text-sm text-slate-600 text-center">
             Already have an account?{" "}
-            <a
-              href="/login"
+            <Link
+              to="/login"
               className="text-blue-600 hover:underline font-medium"
             >
               Log in
-            </a>
+            </Link>
           </p>
         </div>
       </div>
