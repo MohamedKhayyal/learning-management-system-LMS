@@ -14,9 +14,9 @@ export default function CourseCard({
   const roundedRating = Math.round(rating * 10) / 10;
 
   return (
-    <article className="w-full max-w-xs bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition p-3">
+    <article className="w-full max-w-xs bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition p-3">
       <Link to={`/courses/${id ?? ""}`} className="block">
-        <div className="relative rounded-md overflow-hidden">
+        <div className="relative rounded-lg overflow-hidden">
           <img
             src={image}
             alt={title}
@@ -30,21 +30,27 @@ export default function CourseCard({
           )}
         </div>
 
-        <div className="mt-3">
-          <h3 className="text-sm md:text-base font-semibold text-slate-800 line-clamp-2">
-            {title}
-          </h3>
-
-          <p className="text-xs text-slate-500 mt-1">{author}</p>
+        <div className="mt-3 flex flex-col justify-between min-h-[96px]">
+          <div>
+            <h3 className="text-sm md:text-base font-semibold text-slate-800 line-clamp-2">
+              {title}
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">{author}</p>
+          </div>
 
           <div className="mt-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Rating rating={rating} />
+            <div className="flex items-center gap-1.5 leading-none">
+              <div className="flex items-center h-4">
+                <Rating rating={rating} />
+              </div>
 
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-slate-600 leading-none">
                 {roundedRating.toFixed(1)}
               </span>
-              <span className="text-xs text-slate-400">· ({reviews})</span>
+
+              <span className="text-xs text-slate-400 leading-none">
+                ({reviews})
+              </span>
             </div>
 
             <div className="text-sm font-semibold text-slate-800">{price}</div>

@@ -1,129 +1,372 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function AddCourse() {
   const [title, setTitle] = useState("");
-  const [heading, setHeading] = useState("");
+  const [subtitle, setSubtitle] = useState("");
   const [description, setDescription] = useState("");
-  const [price, setPrice] = useState(0);
-  const [file, setFile] = useState(null);
+  const [price, setPrice] = useState("");
+  const [discount, setDiscount] = useState("");
+  const [badge, setBadge] = useState("Full Stack");
+  const [youtubeId, setYoutubeId] = useState("");
+
+  const [rating, setRating] = useState("");
+  const [reviews, setReviews] = useState("");
+  const [students, setStudents] = useState("");
+
+  const [totalSections, setTotalSections] = useState("");
+  const [totalLectures, setTotalLectures] = useState("");
+  const [totalMinutes, setTotalMinutes] = useState("");
+
+  const [curriculumText, setCurriculumText] = useState("");
+
+  const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState(null);
+
+  const [error, setError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!imageFile) {
+      setPreview(null);
+      return;
+    }
+
+    const url = URL.createObjectURL(imageFile);
+    setPreview(url);
+
+    return () => URL.revokeObjectURL(url);
+  }, [imageFile]);
 
   function handleFile(e) {
     const f = e.target.files?.[0];
     if (!f) return;
-    setFile(f);
-    setPreview(URL.createObjectURL(f));
+    setImageFile(f);
   }
 
   function handleSubmit(e) {
     e.preventDefault();
-    const data = { title, heading, description, price, file };
-    alert("Course submitted (check console)");
+    setError(null);
+
+    if (!title || !description || !price || !imageFile) {
+      setError("Title, description, price and image are required.");
+      return;
+    }
+
+    if (discount && (discount < 0 || discount > 100)) {
+      setError("Discount must be between 0 and 100.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("subtitle", subtitle);
+    formData.append("description", description);
+    formData.append("price", price);
+    if (discount !== "") formData.append("discount", discount);
+    if (badge) formData.append("badge", badge);
+    if (youtubeId) formData.append("youtubeId", youtubeId);
+
+    if (rating !== "") formData.append("rating", rating);
+    if (reviews !== "") formData.append("reviews", reviews);
+    if (students !== "") formData.append("students", students);
+
+    if (totalSections !== "") formData.append("totalSections", totalSections);
+    if (totalLectures !== "") formData.append("totalLectures", totalLectures);
+    if (totalMinutes !== "") formData.append("totalMinutes", totalMinutes);
+
+    if (curriculumText.trim()) {
+      formData.append("curriculum", curriculumText.trim());
+    }
+
+    formData.append("image", imageFile);
+
+    console.log("FormData ready for /api/courses:");
+    for (const [key, value] of formData.entries()) {
+      console.log(key, value);
+    }
+
+    alert("Course form prepared. Check console for FormData.");
   }
 
   return (
-    <div className="flex-1 bg-white">
-      <div className="max-w-5xl mx-auto px-8 py-8">
-        <h1 className="text-lg font-semibold mb-6">Add Course</h1>
+    <div className="flex-1 bg-slate-50">
+      <div className="max-w-5xl mx-auto px-6 lg:px-10 py-8">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold text-slate-900">
+            Add New Course
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">
+            Create a new course, set pricing, and upload a thumbnail.
+          </p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm text-slate-700 mb-2">
-              Course Title
-            </label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 h-10"
-              placeholder="Type here"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm text-slate-700 mb-2">
-              Course Headings
-            </label>
-            <input
-              value={heading}
-              onChange={(e) => setHeading(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 h-10"
-              placeholder="Type here"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm text-slate-700 mb-2">
-              Course Description
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 h-28"
-              placeholder="Type here"
-            />
-          </div>
-
-          <div className="flex items-center gap-6">
-            <div>
-              <label className="block text-sm text-slate-700 mb-2">
-                Course Price
-              </label>
-              <input
-                type="number"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className="w-32 border border-gray-300 rounded px-3 h-10"
-                min="0"
-              />
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 lg:p-8">
+          {error && (
+            <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-md">
+              {error}
             </div>
+          )}
 
-            <div className="flex-1">
-              <label className="block text-sm text-slate-700 mb-2">
-                Course Thumbnail
-              </label>
-              <div className="flex items-center gap-3">
-                <label className="inline-flex items-center gap-2 px-3 py-2 rounded bg-blue-50 text-blue-600 border border-blue-100 cursor-pointer">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <section className="space-y-4">
+              <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
+                Basic Information
+              </h2>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    Course Title *
+                  </label>
                   <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleFile}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg px-3.5 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-slate-50/60"
+                    required
                   />
-                  <svg
-                    className="w-4 h-4"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M12 2l4 4h-3v6h-2V6H8l4-4zM4 10v10h16V10H4z" />
-                  </svg>
-                  <span className="text-sm">Upload</span>
-                </label>
+                </div>
 
-                {preview ? (
-                  <img
-                    src={preview}
-                    alt="thumb"
-                    className="w-28 h-20 object-cover rounded border"
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    Subtitle
+                  </label>
+                  <input
+                    value={subtitle}
+                    onChange={(e) => setSubtitle(e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg px-3.5 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
-                ) : (
-                  <div className="w-28 h-20 bg-gray-50 rounded border flex items-center justify-center text-xs text-gray-400">
-                    Preview
-                  </div>
-                )}
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    Description *
+                  </label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg px-3.5 py-2.5 h-28 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                    required
+                  />
+                </div>
               </div>
-            </div>
-          </div>
+            </section>
 
-          <div>
-            <button
-              type="submit"
-              className="px-6 py-2 bg-black text-white rounded"
-            >
-              ADD
-            </button>
-          </div>
-        </form>
+            <section className="space-y-4">
+              <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
+                Pricing & Category
+              </h2>
+
+              <div className="grid md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    Price (USD) *
+                  </label>
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-slate-500">$</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      className="w-full border border-slate-200 rounded-lg px-3 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    Discount (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={discount}
+                    onChange={(e) => setDiscount(e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg px-3 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    Badge / Category
+                  </label>
+                  <select
+                    value={badge}
+                    onChange={(e) => setBadge(e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg px-3 h-10 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="Full Stack">Full Stack</option>
+                    <option value="Frontend">Frontend</option>
+                    <option value="Backend">Backend</option>
+                    <option value="AI/ML">AI/ML</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">
+                Media & Meta
+              </h2>
+
+              <div className="grid md:grid-cols-3 gap-4 items-start">
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    Course Thumbnail *
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 cursor-pointer text-sm font-medium hover:bg-blue-100">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleFile}
+                      />
+                      <svg
+                        className="w-4 h-4"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M12 2l4 4h-3v6h-2V6H8l4-4zM4 10v10h16V10H4z" />
+                      </svg>
+                      <span>Upload</span>
+                    </label>
+
+                    {preview ? (
+                      <img
+                        src={preview}
+                        alt="thumb"
+                        className="w-32 h-24 object-cover rounded-lg border border-slate-200 shadow-sm"
+                      />
+                    ) : (
+                      <div className="w-32 h-24 bg-slate-50 rounded-lg border border-dashed border-slate-300 flex items-center justify-center text-[11px] text-slate-400">
+                        No image selected
+                      </div>
+                    )}
+                  </div>
+                  {imageFile && (
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      Selected:{" "}
+                      <span className="font-medium">{imageFile.name}</span>
+                    </p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    YouTube Video ID
+                  </label>
+                  <input
+                    value={youtubeId}
+                    onChange={(e) => setYoutubeId(e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg px-3 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    Only the video ID, not the full URL.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-4 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    Rating
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="5"
+                    value={rating}
+                    onChange={(e) => setRating(e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg px-3 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    Reviews
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={reviews}
+                    onChange={(e) => setReviews(e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg px-3 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    Students
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={students}
+                    onChange={(e) => setStudents(e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg px-3 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    Total Minutes
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={totalMinutes}
+                    onChange={(e) => setTotalMinutes(e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg px-3 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    Total Sections
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={totalSections}
+                    onChange={(e) => setTotalSections(e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg px-3 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1.5">
+                    Total Lectures
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={totalLectures}
+                    onChange={(e) => setTotalLectures(e.target.value)}
+                    className="w-full border border-slate-200 rounded-lg px-3 h-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+            </section>
+
+            <div className="pt-4 border-t border-slate-100 flex justify-end">
+              <button
+                type="submit"
+                disabled={submitting}
+                className={`px-6 py-2.5 rounded-full text-sm font-medium shadow-sm ${
+                  submitting
+                    ? "bg-slate-300 text-slate-600 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
+                }`}
+              >
+                {submitting ? "Saving..." : "Create Course"}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

@@ -24,7 +24,7 @@ export default function Star({ type = "full" }) {
 
   if (type === "half") {
     return (
-      <svg className="w-4 h-4" viewBox="0 0 20 20" aria-hidden>
+      <svg className="w-4 h-4 text-amber-400" viewBox="0 0 20 20" aria-hidden>
         <defs>
           <linearGradient id={gradientId}>
             <stop offset="50%" stopColor="currentColor" />

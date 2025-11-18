@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Sidebar from "../../components/educator/sidebar";
-import Header from "../../components/educator/Navbar";
 import AddCourse from "./AddCourse";
 import DashboardHome from "./Dashboard";
 import Students from "./StudentsEnrolled";
@@ -12,8 +11,6 @@ export default function Educator() {
       <Sidebar />
 
       <div className="flex-1 flex flex-col">
-        <Header />
-
         <div className="w-full flex">
           <div className="w-[1px] bg-gray-200" />
 

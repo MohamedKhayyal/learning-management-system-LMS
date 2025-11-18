@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Navigate, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
@@ -9,13 +9,27 @@ export default function SignUp() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [photo, setPhoto] = useState(null); 
+  const [photo, setPhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null); // ✅ preview
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // ✅ Clean up preview URL لما الصورة تتغير
+  useEffect(() => {
+    if (!photo) {
+      setPhotoPreview(null);
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(photo);
+    setPhotoPreview(objectUrl);
+
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [photo]);
 
   if (user) {
     return <Navigate to="/" replace />;
@@ -51,7 +65,7 @@ export default function SignUp() {
 
       const data = await res.json();
 
-      if (!res.ok) {
+      if (!res.ok || !data.success) {
         setError(data.message || "Something went wrong while signing up.");
         return;
       }
@@ -78,14 +92,15 @@ export default function SignUp() {
 
       <div className="w-full lg:w-1/2 flex items-center justify-center px-8 py-12">
         <div className="max-w-md w-full">
-          <h2 className="text-3xl font-bold text-slate-900 mb-4">
+          <h2 className="text-3xl font-bold text-slate-900 mb-2">
             Create your account
           </h2>
 
-          <p className="text-slate-500 mb-8">
+          <p className="text-slate-500 mb-6">
             Join our platform and start learning or teaching today.
           </p>
 
+          {/* اختيار Role */}
           <div className="mb-6 flex gap-4">
             <button
               type="button"
@@ -119,6 +134,49 @@ export default function SignUp() {
           )}
 
           <form className="space-y-5" onSubmit={handleSubmit}>
+            <div className="flex flex-col items-center gap-3">
+              <label
+                htmlFor="photo"
+                className="flex flex-col items-center cursor-pointer"
+              >
+                <div className="w-24 h-24 rounded-full border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden bg-slate-50 hover:border-blue-400 transition">
+                  {photoPreview ? (
+                    <img
+                      src={photoPreview}
+                      alt="Selected profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xs text-slate-400 text-center px-2">
+                      Upload
+                      <br />
+                      photo
+                    </span>
+                  )}
+                </div>
+                <span className="mt-2 text-xs text-blue-600 hover:underline">
+                  Click to choose profile photo
+                </span>
+              </label>
+
+              <input
+                id="photo"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  setPhoto(file || null);
+                }}
+                className="hidden"
+              />
+
+              {photo && (
+                <p className="text-xs text-slate-500">
+                  Selected: <span className="font-medium">{photo.name}</span>
+                </p>
+              )}
+            </div>
+
             <div>
               <label className="block text-sm mb-1 text-slate-600">
                 Full name
@@ -166,21 +224,6 @@ export default function SignUp() {
                   {showPwd ? "Hide" : "Show"}
                 </button>
               </div>
-            </div>
-
-            <div>
-              <label className="block text-sm mb-1 text-slate-600">
-                Profile photo
-              </label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  setPhoto(file || null);
-                }}
-                className="w-full text-sm"
-              />
             </div>
 
             <input type="hidden" name="role" value={role} />

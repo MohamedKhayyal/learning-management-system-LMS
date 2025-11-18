@@ -10,7 +10,7 @@ import ScrollToTop from "./components/student/ScrollToTop";
 import Educator from "./pages/educator/Educator";
 import NotFound from "./pages/student/NotFound";
 import CourseDetails from "./pages/student/CourseDetails";
-import ProtectedRoute from "./components/common/ProtectedRoute";
+import ProtectedRoute from "./common/ProtectedRoute";
 
 export default function App() {
   const { pathname } = useLocation();
@@ -20,7 +20,7 @@ export default function App() {
     <div className="min-h-screen flex flex-col">
       <ScrollToTop />
 
-      {!isAdminRoute && <Navbar />}
+       <Navbar />
 
       <main className="flex-1">
         <Routes>

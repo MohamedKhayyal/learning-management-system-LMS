@@ -9,6 +9,7 @@ const errorHandler = require("./middlewares/errorHandler");
 const corsHandler = require("./middlewares/corsHandler");
 
 const authRoute = require("./routes/authRoute");
+const courseRoute = require("./routes/courseRoute");
 
 process.on("uncaughtException", (err) => {
   console.log("UNCAUGHT EXCEPTION! Shutting down...");
@@ -31,6 +32,7 @@ connectDB();
 
 // Routes
 app.use("/api/auth", authRoute);
+app.use("/api/courses", courseRoute);
 
 app.use((req, res, next) => {
   next(new AppError(`Can't find ${req.originalUrl} on this server`, 404));
