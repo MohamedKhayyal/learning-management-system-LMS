@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const slugify = require("slugify");
 
 const curriculumItemSchema = new mongoose.Schema(
   {
@@ -45,7 +46,7 @@ const courseSchema = new mongoose.Schema(
       required: [true, "Course title is required"],
       trim: true,
     },
-
+    slug: String,
     author: {
       type: String,
       required: [true, "Course author is required"],
@@ -125,6 +126,15 @@ const courseSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+courseSchema.index({ slug: 1 }, { unique: true });
+
+courseSchema.pre("save", function (next) {
+  if (this.isModified("title")) {
+    this.slug = slugify(this.title, { lower: true, strict: true });
+  }
+  next();
+});
 
 const Course = mongoose.model("Course", courseSchema);
 

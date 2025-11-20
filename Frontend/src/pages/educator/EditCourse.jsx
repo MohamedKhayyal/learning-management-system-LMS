@@ -1,9 +1,13 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../../context/AuthContext";
 
-export default function AddCourse() {
+export default function EditCourse() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { token } = useAuth();
+
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [description, setDescription] = useState("");
@@ -20,22 +24,57 @@ export default function AddCourse() {
   const [totalLectures, setTotalLectures] = useState("");
   const [totalMinutes, setTotalMinutes] = useState("");
 
-  const [curriculumText, setCurriculumText] = useState("");
-
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState(null);
 
-  const [error, setError] = useState(null);
+  const [loadingCourse, setLoadingCourse] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-
-  const navigate = useNavigate();
-  const { token } = useAuth();
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!imageFile) {
-      setPreview(null);
-      return;
+    async function loadCourse() {
+      try {
+        setLoadingCourse(true);
+        const res = await axios.get(`http://127.0.0.1:3001/api/courses/${id}`);
+
+        const course = res.data.data.course;
+
+        setTitle(course.title || "");
+        setSubtitle(course.subtitle || "");
+        setDescription(course.description || "");
+        setPrice(course.price != null ? course.price : "");
+        setDiscount(course.discount != null ? course.discount : "");
+        setBadge(course.badge || "Full Stack");
+        setYoutubeId(course.youtubeId || "");
+
+        setRating(course.rating != null ? course.rating : "");
+        setReviews(course.reviews != null ? course.reviews : "");
+        setStudents(course.students != null ? course.students : "");
+
+        setTotalSections(
+          course.totalSections != null ? course.totalSections : ""
+        );
+        setTotalLectures(
+          course.totalLectures != null ? course.totalLectures : ""
+        );
+        setTotalMinutes(course.totalMinutes != null ? course.totalMinutes : "");
+
+        if (course.image) {
+          setPreview(`http://127.0.0.1:3001${course.image}`);
+        }
+      } catch (err) {
+        console.error("Failed to load course", err);
+        setError("Failed to load course details.");
+      } finally {
+        setLoadingCourse(false);
+      }
     }
+
+    loadCourse();
+  }, [id]);
+
+  useEffect(() => {
+    if (!imageFile) return;
 
     const url = URL.createObjectURL(imageFile);
     setPreview(url);
@@ -53,8 +92,8 @@ export default function AddCourse() {
     e.preventDefault();
     setError(null);
 
-    if (!title || !description || !price || !imageFile) {
-      setError("Title, description, price and image are required.");
+    if (!title || !description || !price) {
+      setError("Title, description and price are required.");
       return;
     }
 
@@ -64,7 +103,7 @@ export default function AddCourse() {
     }
 
     if (!token) {
-      setError("You must be logged in as educator/admin to add a course.");
+      setError("You must be logged in to edit a course.");
       return;
     }
 
@@ -73,6 +112,7 @@ export default function AddCourse() {
     formData.append("subtitle", subtitle);
     formData.append("description", description);
     formData.append("price", price);
+
     if (discount !== "") formData.append("discount", discount);
     if (badge) formData.append("badge", badge);
     if (youtubeId) formData.append("youtubeId", youtubeId);
@@ -85,70 +125,46 @@ export default function AddCourse() {
     if (totalLectures !== "") formData.append("totalLectures", totalLectures);
     if (totalMinutes !== "") formData.append("totalMinutes", totalMinutes);
 
-    if (curriculumText.trim()) {
-      formData.append("curriculum", curriculumText.trim());
+    if (imageFile) {
+      formData.append("image", imageFile);
     }
-
-    formData.append("image", imageFile);
 
     try {
       setSubmitting(true);
 
-      const res = await axios.post(
-        "http://127.0.0.1:3001/api/courses",
-        formData,
-        {
-          withCredentials: true,
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = res.data;
-
-      if (!data.success) {
-        setError(data.message || "Failed to create course.");
-        return;
-      }
-
-      setTitle("");
-      setSubtitle("");
-      setDescription("");
-      setPrice("");
-      setDiscount("");
-      setBadge("Full Stack");
-      setYoutubeId("");
-      setRating("");
-      setReviews("");
-      setStudents("");
-      setTotalSections("");
-      setTotalLectures("");
-      setTotalMinutes("");
-      setCurriculumText("");
-      setImageFile(null);
-      setPreview(null);
+      await axios.patch(`http://127.0.0.1:3001/api/courses/${id}`, formData, {
+        withCredentials: true,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       navigate("/admin/my-courses");
     } catch (err) {
-      console.error(err);
+      console.error("Failed to update course:", err);
       const msg =
-        err.response?.data?.message || "Network error. Please try again.";
+        err.response?.data?.message || "Failed to update course. Try again.";
       setError(msg);
     } finally {
       setSubmitting(false);
     }
   }
 
+  if (loadingCourse) {
+    return (
+      <div className="flex-1 bg-slate-50 flex items-center justify-center">
+        <p className="text-slate-500">Loading course...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 bg-slate-50">
       <div className="max-w-5xl mx-auto px-6 lg:px-10 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-slate-900">
-            Add New Course
-          </h1>
+          <h1 className="text-2xl font-semibold text-slate-900">Edit Course</h1>
           <p className="text-sm text-slate-500 mt-1">
-            Create a new course, set pricing, and upload a thumbnail.
+            Update course information, pricing, and thumbnail.
           </p>
         </div>
 
@@ -214,6 +230,7 @@ export default function AddCourse() {
                     Price (USD) *
                   </label>
                   <div className="flex items-center gap-1">
+                    <span className="text-sm text-slate-500">$</span>
                     <input
                       type="number"
                       min="0"
@@ -267,7 +284,7 @@ export default function AddCourse() {
               <div className="grid md:grid-cols-3 gap-4 items-start">
                 <div className="md:col-span-2">
                   <label className="block text-xs font-medium text-slate-600 mb-1.5">
-                    Course Thumbnail *
+                    Course Thumbnail
                   </label>
                   <div className="flex items-center gap-4">
                     <label className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 cursor-pointer text-sm font-medium hover:bg-blue-100">
@@ -284,18 +301,18 @@ export default function AddCourse() {
                       >
                         <path d="M12 2l4 4h-3v6h-2V6H8l4-4zM4 10v10h16V10H4z" />
                       </svg>
-                      <span>Upload</span>
+                      <span>Change</span>
                     </label>
 
                     {preview ? (
                       <img
                         src={preview}
-                        alt="thumb"
+                        alt="Course thumbnail"
                         className="w-32 h-24 object-cover rounded-lg border border-slate-200 shadow-sm"
                       />
                     ) : (
                       <div className="w-32 h-24 bg-slate-50 rounded-lg border border-dashed border-slate-300 flex items-center justify-center text-[11px] text-slate-400">
-                        No image selected
+                        No image
                       </div>
                     )}
                   </div>
@@ -403,7 +420,14 @@ export default function AddCourse() {
               </div>
             </section>
 
-            <div className="pt-4 border-t border-slate-100 flex justify-end">
+            <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
+              <button
+                type="button"
+                className="px-5 py-2.5 rounded-full text-sm font-medium border border-slate-300 text-slate-600 hover:bg-slate-50"
+                onClick={() => navigate("/admin/my-courses")}
+              >
+                Cancel
+              </button>
               <button
                 type="submit"
                 disabled={submitting}
@@ -413,7 +437,7 @@ export default function AddCourse() {
                     : "bg-blue-600 text-white hover:bg-blue-700"
                 }`}
               >
-                {submitting ? "Saving..." : "Create Course"}
+                {submitting ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </form>

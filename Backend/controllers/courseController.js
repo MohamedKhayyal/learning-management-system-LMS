@@ -27,6 +27,7 @@ exports.createCourse = catchAsync(async (req, res) => {
   const missing = [];
   if (!image) missing.push("image");
   if (!title) missing.push("title");
+  if (!description) missing.push("description");
   if (!price) missing.push("price");
 
   if (missing.length > 0) {
@@ -41,25 +42,12 @@ exports.createCourse = catchAsync(async (req, res) => {
     );
   }
 
-  if (!author && req.user?.fullName) {
+  if (req.user && req.user.fullName && !author) {
     author = req.user.fullName;
   }
 
-  if (curriculum && typeof curriculum === "string") {
-    try {
-      curriculum = JSON.parse(curriculum);
-    } catch (err) {
-      return sendFail(
-        res,
-        { curriculum: "Invalid curriculum format" },
-        "Curriculum must be valid JSON",
-        STATUS_CODES.BAD_REQUEST
-      );
-    }
-  }
-
-  const numericPrice = Number(price);
-  if (Number.isNaN(numericPrice)) {
+  const basePrice = Number(price);
+  if (Number.isNaN(basePrice)) {
     return sendFail(
       res,
       { price: "Price must be a number" },
@@ -68,16 +56,52 @@ exports.createCourse = catchAsync(async (req, res) => {
     );
   }
 
+  const disc =
+    discount !== undefined && discount !== null && discount !== ""
+      ? Number(discount)
+      : 0;
+
+  let finalDiscount = Number.isNaN(disc) ? 0 : disc;
+  if (finalDiscount < 0 || finalDiscount > 100) {
+    return sendFail(
+      res,
+      { discount: "Discount must be between 0 and 100" },
+      "Invalid discount value",
+      STATUS_CODES.BAD_REQUEST
+    );
+  }
+
+  let finalPrice = basePrice;
+  let computedOldPrice = undefined;
+
+  if (finalDiscount > 0) {
+    computedOldPrice = basePrice;
+    finalPrice = Number((basePrice * (1 - finalDiscount / 100)).toFixed(2));
+  }
+
+  if (curriculum && typeof curriculum === "string") {
+    try {
+      curriculum = JSON.parse(curriculum);
+    } catch (err) {
+      return sendFail(
+        res,
+        { curriculum: "Invalid curriculum JSON" },
+        "Curriculum must be valid JSON",
+        STATUS_CODES.BAD_REQUEST
+      );
+    }
+  }
+
   const course = await Course.create({
     image,
     title,
     author,
-    price: numericPrice,
-    oldPrice,
+    price: finalPrice,
+    oldPrice: computedOldPrice,
     rating,
     reviews,
     students,
-    discount,
+    discount: finalDiscount,
     badge,
     youtubeId,
     subtitle,
@@ -152,6 +176,12 @@ exports.updateCourse = catchAsync(async (req, res) => {
     }
   }
 
+  let basePrice = course.oldPrice != null ? course.oldPrice : course.price;
+  let finalDiscount = typeof course.discount === "number" ? course.discount : 0;
+
+  let hasPriceChange = false;
+  let hasDiscountChange = false;
+
   if (updates.price !== undefined) {
     const newPrice = Number(updates.price);
     if (Number.isNaN(newPrice)) {
@@ -162,7 +192,9 @@ exports.updateCourse = catchAsync(async (req, res) => {
         STATUS_CODES.BAD_REQUEST
       );
     }
-    updates.price = newPrice;
+    basePrice = newPrice;
+    hasPriceChange = true;
+    delete updates.price;
   }
 
   if (updates.discount !== undefined) {
@@ -180,27 +212,23 @@ exports.updateCourse = catchAsync(async (req, res) => {
       );
     }
 
-    if (newDiscount > 0) {
-      if (!course.oldPrice) {
-        course.oldPrice = course.price;
-      }
+    finalDiscount = newDiscount;
+    hasDiscountChange = true;
+    delete updates.discount;
+  }
 
-      course.discount = newDiscount;
-
-      course.price = Number(
-        (course.oldPrice * (1 - newDiscount / 100)).toFixed(2)
-      );
+  if (hasPriceChange || hasDiscountChange) {
+    if (finalDiscount > 0) {
+      course.oldPrice = basePrice;
+      course.price = Number((basePrice * (1 - finalDiscount / 100)).toFixed(2));
+      course.discount = finalDiscount;
     } else {
-      if (course.oldPrice) {
-        course.price = course.oldPrice;
-        course.oldPrice = undefined;
-      }
+      course.price = basePrice;
+      course.oldPrice = undefined;
       course.discount = 0;
     }
-
-    delete updates.discount;
-    delete updates.price;
   }
+
   Object.assign(course, updates);
 
   await course.save();

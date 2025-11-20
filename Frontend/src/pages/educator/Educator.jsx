@@ -4,6 +4,7 @@ import AddCourse from "./AddCourse";
 import DashboardHome from "./Dashboard";
 import Students from "./StudentsEnrolled";
 import MyCourses from "./MyCourses";
+import EditCourse from "./EditCourse";
 
 export default function Educator() {
   return (
@@ -20,6 +21,7 @@ export default function Educator() {
               <Route path="add-course" element={<AddCourse />} />
               <Route path="my-courses" element={<MyCourses />} />
               <Route path="students" element={<Students />} />
+              <Route path="edit-course/:id/:slug" element={<EditCourse />} />
               <Route path="*" element={<Navigate to="/admin" replace />} />
             </Routes>
           </main>
